@@ -1,0 +1,12 @@
+<?php
+/** @var \Magento\Framework\View\Element\Template $block */
+/** @var \BluePrint3D\GoogleShoppingSuite\ViewModel\ProductSchema $viewModel */
+$viewModel = $block->getData('view_model');
+$schemaData = $viewModel->getSchemaData();
+?>
+
+<?php if (!empty($schemaData)): ?>
+    <script type="application/ld+json">
+        <?= json_encode($schemaData, JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT); ?>
+    </script>
+<?php endif; ?>
