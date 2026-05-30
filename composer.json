@@ -2,7 +2,6 @@
     "name": "blueprint3d/module-google-shopping-suite",
     "description": "Magento 2 Google Shopping Feed Generator with frontend JSON-LD product data structured snippets.",
     "type": "magento2-module",
-    "version": "1.0.0",
     "license": [
         "proprietary"
     ],
