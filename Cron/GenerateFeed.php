@@ -35,37 +35,40 @@ class GenerateFeed
         $baseUrl = $this->storeManager->getStore()->getBaseUrl();
         $mediaUrl = $this->storeManager->getStore()->getBaseUrl(\Magento\Framework\App\Filesystem\DirectoryList::MEDIA);
 
-        // 2. Initialize XML Writer
-        $baseUrl = $this->storeManager->getStore()->getBaseUrl(); // e.g., "https://www.example.co.uk/"
-
-        // Parse the URL to extract just the host (e.g., "www.example.co.uk")
+        // Parse the URL to extract just the host (e.g., "www.blueprint3d.co.uk")
         $host = parse_url($baseUrl, PHP_URL_HOST);
+        $domain = str_replace('www.', '', $host);
 
-        // Clean up "www." if it exists so you get a clean domain name
-        $domain = str_replace('www.', '', $host); // Results in "example.co.uk"
+        // Define the Google Namespace URI
+        $googleNamespace = 'http://base.google.com/ns/1.0';
 
-        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="http://base.google.com/ns/1.0"/>');
+        // 2. Initialize XML Root
+        $xml = new \SimpleXMLElement('<?xml version="1.0" encoding="UTF-8"?><rss version="2.0" xmlns:g="' . $googleNamespace . '"/>');
         $channel = $xml->addChild('channel');
 
-        // Set the dynamic title using the domain variable
+        // Standard RSS Channel Header tags (No namespace)
         $channel->addChild('title', $domain . ' Google Shopping Feed');
         $channel->addChild('link', $baseUrl);
 
         // 3. Loop products and map attributes
         foreach ($collection as $product) {
             $item = $channel->addChild('item');
-            $item->addChild('g:id', $product->getId());
-            $item->addChild('g:title', htmlspecialchars($product->getName()));
-            $item->addChild('g:link', $product->getProductUrl());
 
-            // Critical part: Getting the final price dynamically
+            // Standard RSS Tags required inside <item> (No namespace required here)
+            $item->addChild('title', htmlspecialchars($product->getName()));
+            $item->addChild('link', $product->getProductUrl());
+            $item->addChild('description', htmlspecialchars($product->getShortDescription() ?? $product->getName()));
+
+            // Google-specific attributes (Explicitly passing the namespace URI as the 3rd parameter)
+            $item->addChild('g:id', $product->getId(), $googleNamespace);
+
             $price = number_format($product->getFinalPrice(), 2, '.', '');
             $currency = $this->storeManager->getStore()->getCurrentCurrencyCode();
-            $item->addChild('g:price', $price . ' ' . $currency); // Outputs e.g., "14.99 GBP"
+            $item->addChild('g:price', $price . ' ' . $currency, $googleNamespace);
 
-            $item->addChild('g:image_link', $mediaUrl . 'catalog/product' . $product->getImage());
-            $item->addChild('g:availability', $product->isAvailable() ? 'in_stock' : 'out_of_stock');
-            $item->addChild('g:condition', 'new');
+            $item->addChild('g:image_link', $mediaUrl . 'catalog/product' . $product->getImage(), $googleNamespace);
+            $item->addChild('g:availability', $product->isAvailable() ? 'in_stock' : 'out_of_stock', $googleNamespace);
+            $item->addChild('g:condition', 'new', $googleNamespace);
         }
 
         // 4. Save file to pub/media/feeds/google.xml
