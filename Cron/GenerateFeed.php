@@ -50,24 +50,27 @@ class GenerateFeed
         $channel->addChild('title', $domain . ' Google Shopping Feed');
         $channel->addChild('link', $baseUrl);
 
-        // 3. Loop products and map attributes
+// 3. Loop products and map attributes
         foreach ($collection as $product) {
             $item = $channel->addChild('item');
 
-            // Standard RSS Tags required inside <item> (No namespace required here)
+            // 1. ALWAYS CALC PRICE FIRST (Before Magento reloads models for URLs)
+            $price = number_format((float)$product->getFinalPrice(), 2, '.', '');
+            $currency = $this->storeManager->getStore()->getCurrentCurrencyCode();
+
+            // 2. Safe string conversion for Google's explicit availability constraints
+            $availabilityString = $product->isAvailable() ? 'in_stock' : 'out_of_stock';
+
+            // 3. Standard RSS Tags required inside <item>
             $item->addChild('title', htmlspecialchars($product->getName()));
             $item->addChild('link', $product->getProductUrl());
             $item->addChild('description', htmlspecialchars($product->getShortDescription() ?? $product->getName()));
 
-            // Google-specific attributes (Explicitly passing the namespace URI as the 3rd parameter)
+            // 4. Google-specific attributes with Namespace URI
             $item->addChild('g:id', $product->getId(), $googleNamespace);
-
-            $price = number_format($product->getFinalPrice(), 2, '.', '');
-            $currency = $this->storeManager->getStore()->getCurrentCurrencyCode();
             $item->addChild('g:price', $price . ' ' . $currency, $googleNamespace);
-
             $item->addChild('g:image_link', $mediaUrl . 'catalog/product' . $product->getImage(), $googleNamespace);
-            $item->addChild('g:availability', $product->isAvailable() ? 'in_stock' : 'out_of_stock', $googleNamespace);
+            $item->addChild('g:availability', $availabilityString, $googleNamespace);
             $item->addChild('g:condition', 'new', $googleNamespace);
         }
 
