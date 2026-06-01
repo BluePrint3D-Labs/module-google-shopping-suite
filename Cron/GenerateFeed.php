@@ -32,6 +32,9 @@ class GenerateFeed
             ->addAttributeToFilter('status', Status::STATUS_ENABLED)
             ->addAttributeToFilter('visibility', ['in' => [Visibility::VISIBILITY_BOTH, Visibility::VISIBILITY_IN_CATALOG]]);
 
+        // FIX: Joins index tables to populate getFinalPrice() data properties inside loops cleanly
+        $collection->addPriceData();
+
         $baseUrl = $this->storeManager->getStore()->getBaseUrl();
         $mediaUrl = $this->storeManager->getStore()->getBaseUrl(\Magento\Framework\App\Filesystem\DirectoryList::MEDIA);
 
@@ -50,7 +53,7 @@ class GenerateFeed
         $channel->addChild('title', $domain . ' Google Shopping Feed');
         $channel->addChild('link', $baseUrl);
 
-// 3. Loop products and map attributes
+        // 3. Loop products and map attributes
         foreach ($collection as $product) {
             $item = $channel->addChild('item');
 
